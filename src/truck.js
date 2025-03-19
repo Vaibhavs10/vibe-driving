@@ -348,14 +348,14 @@ export class Truck {
     }
     
     updateAnimations(deltaTime, steeringAngle, speed, groundNormal) {
-        // Calculate lean while turning (roll) - exaggerated for cartoon effect
-        const targetLean = -steeringAngle * 0.05 * Math.min(1, speed / 5);
-        this.animation.lean += (targetLean - this.animation.lean) * Math.min(1, deltaTime * 5);
+        // Calculate lean while turning (roll) - more noticeable for better feedback
+        const targetLean = -steeringAngle * 0.05 * Math.min(1, speed / 5); // Increased from 0.03 for more visible lean
+        this.animation.lean += (targetLean - this.animation.lean) * Math.min(1, deltaTime * 3.0); // Increased from 2.5 for faster response
         
-        // Calculate pitch based on acceleration/deceleration - exaggerated
+        // Calculate pitch based on acceleration/deceleration - more noticeable
         const acceleration = speed - this.animation.prevSpeed;
-        const targetPitch = -acceleration * 0.015;
-        this.animation.pitch += (targetPitch - this.animation.pitch) * Math.min(1, deltaTime * 3);
+        const targetPitch = -acceleration * 0.01; // Increased from 0.008 for more feedback
+        this.animation.pitch += (targetPitch - this.animation.pitch) * Math.min(1, deltaTime * 2.0); // Increased from 1.8
         this.animation.prevSpeed = speed;
     }
     
@@ -371,9 +371,9 @@ export class Truck {
                 wheelMesh.rotation.x = this.animation.wheelRotation;
             }
             
-            // Steer only front wheels (index 2,3) - exaggerated steering for cartoon look
+            // Steer only front wheels (index 2,3) - more dramatic for better visual feedback
             if (index >= 2) {
-                wheel.rotation.y = steeringAngle * 1.2;
+                wheel.rotation.y = steeringAngle * 1.2; // Increased from 1.0 for more dramatic steering visuals
             }
         });
     }

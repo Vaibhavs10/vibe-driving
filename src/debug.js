@@ -34,10 +34,30 @@ export class DebugDisplay {
     update(data) {
         if (!this.debugDiv || !this.visible) return;
         
+        // Format position and speed with 2 decimal points
+        const formattedPosition = {
+            x: data.position.x.toFixed(2),
+            y: data.position.y.toFixed(2),
+            z: data.position.z.toFixed(2)
+        };
+        
+        // Check if near boundary
+        const boundaryLimit = 1750 - 5; // Same as in physics.js
+        const distanceToBoundaryX = boundaryLimit - Math.abs(data.position.x);
+        const distanceToBoundaryZ = boundaryLimit - Math.abs(data.position.z);
+        const minDistanceToBoundary = Math.min(distanceToBoundaryX, distanceToBoundaryZ);
+        let boundaryWarning = '';
+        
+        if (minDistanceToBoundary < 200) {
+            const warningIntensity = Math.floor((1 - minDistanceToBoundary / 200) * 10);
+            const exclamationMarks = '!'.repeat(warningIntensity);
+            boundaryWarning = `<div class="boundary-warning">APPROACHING BOUNDARY${exclamationMarks}</div>`;
+        }
+        
         let html = '<strong>DEBUG INFO</strong><br>';
         
         if (data.position) {
-            html += `Position: (${data.position.x.toFixed(2)}, ${data.position.y.toFixed(2)}, ${data.position.z.toFixed(2)})<br>`;
+            html += `Position: (${formattedPosition.x}, ${formattedPosition.y}, ${formattedPosition.z})<br>`;
         }
         
         if (data.rotation !== undefined) {
@@ -74,6 +94,8 @@ export class DebugDisplay {
         if (data.custom) {
             html += `<br><br>${data.custom}`;
         }
+        
+        html += boundaryWarning;
         
         this.debugDiv.innerHTML = html;
     }

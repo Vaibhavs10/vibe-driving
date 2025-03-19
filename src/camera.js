@@ -5,19 +5,23 @@ export class GameCamera {
         this.camera = camera;
         this.target = null;
         
-        // Camera parameters - adjusted for flat terrain
-        this.defaultHeight = 15; // Increased from 12 for better overview
-        this.defaultDistance = 25; // Increased from 20 for wider field of view
+        // Camera parameters - optimized for better turning visibility
+        this.defaultHeight = 6; // Further lowered from 7 for a lower, more dynamic view
+        this.defaultDistance = 12; // Reduced from 14 for closer, more immediate feedback
         
         // Current values for smooth transition
         this.currentHeight = this.defaultHeight;
         this.currentDistance = this.defaultDistance;
         this.currentLookAt = new THREE.Vector3();
         
-        // Smoothing factors
-        this.positionSmoothing = 0.1;
-        this.rotationSmoothing = 0.2;
-        this.targetOffset = new THREE.Vector3(0, 2, 0); // Reduced from 3 for flatter perspective
+        // Smoothing factors - more dynamic for better turning feedback
+        this.positionSmoothing = 0.12; // Increased from 0.08 for more camera movement during turns
+        this.rotationSmoothing = 0.18; // Increased from 0.15 for more dynamic rotation
+        this.targetOffset = new THREE.Vector3(0, 0.8, 0); // Lower camera target for better road view
+        
+        // Add lateral offset for more dramatic view during cornering
+        this.maxLateralOffset = 3.0; // Increased from 2.0 for more dramatic offset during turns
+        this.currentLateralOffset = 0;
     }
     
     setTarget(target) {
@@ -27,41 +31,61 @@ export class GameCamera {
     update(deltaTime, targetSpeed = 0) {
         if (!this.target || !this.camera) return;
         
-        // Get target position
+        // Get target position and rotation
         const targetPosition = this.target.position.clone();
+        const targetRotation = this.target.rotation.y;
         
-        // Adjust camera height and distance based on speed for a dynamic feel
-        const heightFactor = Math.min(1, targetSpeed / 30);
-        const targetHeight = this.defaultHeight + heightFactor * 6; // Increased from 5 for higher perspective at speed
-        const targetDistance = this.defaultDistance + heightFactor * 8; // Increased from 5 for better visibility at speed
+        // Calculate current steering angle from rotation
+        const steeringAngle = this.target.children[0]?.rotation.y || 0;
         
-        // Smooth transitions
-        this.currentHeight += (targetHeight - this.currentHeight) * this.positionSmoothing;
-        this.currentDistance += (targetDistance - this.currentDistance) * this.positionSmoothing;
+        // Adjust camera height and distance based on speed
+        const heightFactor = Math.min(1, targetSpeed / 30); // Reduced from 40 for earlier height change
+        const targetHeight = this.defaultHeight + heightFactor * 5; // Increased from 4 for more dramatic height change
+        const targetDistance = this.defaultDistance + heightFactor * 6; // Increased from 5 for more dramatic distance change
+        
+        // Calculate lateral offset based on steering - more dramatic effect
+        const targetLateralOffset = steeringAngle * this.maxLateralOffset;
+        this.currentLateralOffset += (targetLateralOffset - this.currentLateralOffset) * 
+            Math.min(deltaTime * 3.0, 0.15); // Increased from 2.0/0.1 for much faster response
+        
+        // Smooth transitions with more responsiveness for enhanced turning feel
+        this.currentHeight += (targetHeight - this.currentHeight) * 
+            Math.min(deltaTime * 2.0, this.positionSmoothing); // Increased from 1.5
+        this.currentDistance += (targetDistance - this.currentDistance) * 
+            Math.min(deltaTime * 2.0, this.positionSmoothing); // Increased from 1.5
         
         // Calculate camera position based on truck position and rotation
         const truckDirection = new THREE.Vector3(
-            Math.sin(this.target.rotation.y),
+            Math.sin(targetRotation),
             0,
-            Math.cos(this.target.rotation.y)
+            Math.cos(targetRotation)
         );
         
-        // Calculate camera position
+        // Calculate right vector for lateral offset
+        const rightVector = new THREE.Vector3(
+            Math.cos(targetRotation),
+            0,
+            -Math.sin(targetRotation)
+        );
+        
+        // Calculate camera position with enhanced lateral offset for more dramatic cornering view
         const cameraPosition = targetPosition.clone()
             .sub(truckDirection.clone().multiplyScalar(this.currentDistance))
+            .add(rightVector.clone().multiplyScalar(this.currentLateralOffset))
             .add(new THREE.Vector3(0, this.currentHeight, 0));
         
-        // Smoothly update camera position
-        this.camera.position.lerp(cameraPosition, this.positionSmoothing);
+        // Smoothly update camera position - much faster for more immediate turning feedback
+        this.camera.position.lerp(cameraPosition, Math.min(deltaTime * 4.0, this.positionSmoothing * 2.0));
         
-        // Calculate the look at position (slightly ahead of the truck)
-        const lookAheadFactor = Math.min(1, targetSpeed / 10);
+        // Calculate the look at position with more focus on turning direction
+        const lookAheadFactor = Math.min(1, targetSpeed / 12); // Reduced from 15 for earlier look-ahead
         const lookAtPosition = targetPosition.clone()
             .add(this.targetOffset)
-            .add(truckDirection.clone().multiplyScalar(8 * lookAheadFactor)); // Increased from 5 for looking further ahead
+            .add(truckDirection.clone().multiplyScalar(6 * lookAheadFactor)) // Increased from 5 for looking further ahead
+            .add(rightVector.clone().multiplyScalar(steeringAngle * 2.0)); // Added rightward shift for better turning visibility
         
-        // Smoothly update the look at position
-        this.currentLookAt.lerp(lookAtPosition, this.rotationSmoothing);
+        // Smoothly update the look at position - faster for better turning response
+        this.currentLookAt.lerp(lookAtPosition, Math.min(deltaTime * 4.5, this.rotationSmoothing * 2.0));
         
         // Apply look at
         this.camera.lookAt(this.currentLookAt);
@@ -81,12 +105,13 @@ export class GameCamera {
                 .add(new THREE.Vector3(0, this.defaultHeight, 0))
         );
         
-        // Look at truck
+        // Look at truck with the new target offset
         this.camera.lookAt(targetPosition.clone().add(this.targetOffset));
         
         // Reset camera parameters
         this.currentHeight = this.defaultHeight;
         this.currentDistance = this.defaultDistance;
+        this.currentLateralOffset = 0;
         this.currentLookAt.copy(targetPosition.clone().add(this.targetOffset));
     }
 } 

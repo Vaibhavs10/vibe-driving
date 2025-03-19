@@ -3,13 +3,13 @@ import * as THREE from 'three';
 export class Terrain {
     constructor(scene) {
         this.scene = scene;
-        this.groundSize = 5000; // Increased from 2000 to make the canvas larger but still finite
+        this.groundSize = 3500; // Increased from 2000 to make the canvas larger but still finite
         this.groundSegments = 50; // Reduced since we don't need as many segments for a flat terrain
         this.terrainMesh = null;
         this.heightData = null;
         this.decorationChunks = new Map();
         this.chunkSize = 100; // Size of each decoration chunk
-        this.visibleRange = 450; // Increased visible range from 350 to 450
+        this.visibleRange = 350; // Increased visible range from 350 to 450
     }
     
     build() {
@@ -37,6 +37,9 @@ export class Terrain {
         this.terrainMesh.rotation.x = -Math.PI / 2;
         this.terrainMesh.receiveShadow = true;
         this.scene.add(this.terrainMesh);
+        
+        // Add boundary markers to show the edges
+        this.addBoundaryMarkers();
         
         return this.terrainMesh;
     }
@@ -423,5 +426,45 @@ export class Terrain {
         }
         
         return flower;
+    }
+    
+    // Add visible boundary markers
+    addBoundaryMarkers() {
+        const boundarySize = this.groundSize / 2;
+        const markerHeight = 15;
+        const postSpacing = 50;
+        
+        // Create boundary post geometry and material
+        const postGeometry = new THREE.BoxGeometry(2, markerHeight, 2);
+        const postMaterial = new THREE.MeshStandardMaterial({
+            color: 0xFF5555,
+            roughness: 0.7,
+            metalness: 0.2,
+        });
+        
+        // Create boundary posts along the perimeter
+        for (let i = -boundarySize; i <= boundarySize; i += postSpacing) {
+            // Create posts at the X boundaries
+            const postX1 = new THREE.Mesh(postGeometry, postMaterial);
+            postX1.position.set(i, markerHeight / 2, -boundarySize);
+            postX1.castShadow = true;
+            this.scene.add(postX1);
+            
+            const postX2 = new THREE.Mesh(postGeometry, postMaterial);
+            postX2.position.set(i, markerHeight / 2, boundarySize);
+            postX2.castShadow = true;
+            this.scene.add(postX2);
+            
+            // Create posts at the Z boundaries
+            const postZ1 = new THREE.Mesh(postGeometry, postMaterial);
+            postZ1.position.set(-boundarySize, markerHeight / 2, i);
+            postZ1.castShadow = true;
+            this.scene.add(postZ1);
+            
+            const postZ2 = new THREE.Mesh(postGeometry, postMaterial);
+            postZ2.position.set(boundarySize, markerHeight / 2, i);
+            postZ2.castShadow = true;
+            this.scene.add(postZ2);
+        }
     }
 } 

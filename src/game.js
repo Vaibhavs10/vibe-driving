@@ -69,6 +69,9 @@ export class Game {
         // Create camera controller
         this.camera.position.set(0, 10, -15);
         this.cameraController = new GameCamera(this.camera);
+        
+        // Input state
+        this.currentInputState = null;
     }
     
     initialize() {
@@ -89,7 +92,7 @@ export class Game {
             // Set up input and connect to physics
             this.input.setup();
             this.input.onInputChange((keys) => {
-                this.physics.applyUserInput(keys);
+                this.currentInputState = keys;
             });
             
             // Set up window resize handler
@@ -204,6 +207,11 @@ export class Game {
     }
     
     updateTruck(deltaTime) {
+        // Apply user input to physics with current deltaTime
+        if (this.currentInputState) {
+            this.physics.applyUserInput(this.currentInputState, deltaTime);
+        }
+        
         // Update physics with terrain data
         const physicsResult = this.physics.update(
             deltaTime,
