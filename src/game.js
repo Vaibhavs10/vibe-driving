@@ -27,17 +27,17 @@ export class Game {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         
-        // Set sky color
-        const skyColor = new THREE.Color(0xCAE4F1); // Soft blue sky
+        // Set sky color - enhanced to a more vibrant blue
+        const skyColor = new THREE.Color(0x87CEEB); // Brighter sky blue
         this.renderer.setClearColor(skyColor);
         this.scene.background = skyColor;
         
-        // Create fog for distance fading
-        const horizonColor = new THREE.Color(0xF5E9CF);
-        this.scene.fog = new THREE.FogExp2(horizonColor, 0.006);
+        // Create fog for distance fading - more subtle and atmospheric
+        const horizonColor = new THREE.Color(0xF8E8D8); // Warmer horizon color
+        this.scene.fog = new THREE.FogExp2(horizonColor, 0.005); // Slightly reduced fog density
         
-        // Add ambient light
-        const ambientLight = new THREE.AmbientLight(0xE1EBF2, 0.5);
+        // Add ambient light - increased intensity for better illumination
+        const ambientLight = new THREE.AmbientLight(0xE8F1FF, 0.6); // Increased from 0.5 to 0.6
         this.scene.add(ambientLight);
         
         // Time tracking
@@ -116,15 +116,15 @@ export class Game {
     }
     
     createSkybox() {
-        // Create a sky gradient using a large sphere
+        // Create a sky gradient using a large sphere with enhanced colors
         const skyDome = new THREE.Mesh(
             new THREE.SphereGeometry(900, 32, 32),
             new THREE.ShaderMaterial({
                 uniforms: {
-                    topColor: { value: new THREE.Color(0xCAE4F1) }, // Sky blue 
-                    bottomColor: { value: new THREE.Color(0xF5E9CF) }, // Horizon
+                    topColor: { value: new THREE.Color(0x5D9FE4) }, // Rich sky blue 
+                    bottomColor: { value: new THREE.Color(0xFFE9CF) }, // Warmer horizon
                     offset: { value: 400 },
-                    exponent: { value: 0.6 }
+                    exponent: { value: 0.7 } // Increased from 0.6 for more distinct gradient
                 },
                 vertexShader: `
                     varying vec3 vWorldPosition;
@@ -152,8 +152,8 @@ export class Game {
     }
     
     setupLights() {
-        // Main directional light (sun)
-        const sunLight = new THREE.DirectionalLight(0xFFE4B5, 1.2);
+        // Main directional light (sun) - enhanced colors and intensity
+        const sunLight = new THREE.DirectionalLight(0xFFF0D6, 1.4); // Warmer and brighter (from 1.2 to 1.4)
         sunLight.position.set(50, 100, 50);
         sunLight.castShadow = true;
         sunLight.shadow.mapSize.width = 2048;
@@ -161,8 +161,8 @@ export class Game {
         sunLight.shadow.camera.far = 200;
         sunLight.shadow.bias = -0.0001;
         
-        // Set shadow camera dimensions
-        const shadowSize = 100;
+        // Set shadow camera dimensions - increased for better coverage
+        const shadowSize = 120; // Increased from 100 to 120
         sunLight.shadow.camera.left = -shadowSize;
         sunLight.shadow.camera.right = shadowSize;
         sunLight.shadow.camera.top = shadowSize;
@@ -170,10 +170,14 @@ export class Game {
         
         this.scene.add(sunLight);
         
-        // Fill light to soften shadows
-        const fillLight = new THREE.DirectionalLight(0xB4E1FF, 0.4);
+        // Fill light to soften shadows - enhanced
+        const fillLight = new THREE.DirectionalLight(0xC4E8FF, 0.5); // Increased from 0.4 to 0.5
         fillLight.position.set(-50, 30, -50);
         this.scene.add(fillLight);
+        
+        // Add a subtle ground bounce light for more depth
+        const bounceLight = new THREE.HemisphereLight(0xFFE8D0, 0x80A0CC, 0.4);
+        this.scene.add(bounceLight);
     }
     
     handleResize() {

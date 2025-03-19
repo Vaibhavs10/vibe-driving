@@ -9,7 +9,7 @@ export class Terrain {
         this.heightData = null;
         this.decorationChunks = new Map();
         this.chunkSize = 100; // Size of each decoration chunk
-        this.visibleRange = 350; // How far decorations should be visible
+        this.visibleRange = 450; // Increased visible range from 350 to 450
     }
     
     build() {
@@ -217,10 +217,10 @@ export class Terrain {
             return;
         }
         
-        // Generate simplified decorations
-        const numTrees = Math.floor(Math.random() * 5) + 1;
-        const numRocks = Math.floor(Math.random() * 3);
-        const numFlowers = Math.floor(Math.random() * 2);
+        // Generate more decorations
+        const numTrees = Math.floor(Math.random() * 6) + 2; // Increased from 5+1 to 6+2
+        const numRocks = Math.floor(Math.random() * 4); // Increased from 3 to 4
+        const numFlowers = Math.floor(Math.random() * 5) + 3; // Increased from 2 to 5+3
         
         // Add trees
         for (let i = 0; i < numTrees; i++) {
@@ -233,9 +233,9 @@ export class Terrain {
             const tree = this.createTree();
             tree.position.set(x, y, z);
             
-            // Slightly random rotation and scale
+            // Slightly random rotation and scale (bigger than before)
             tree.rotation.y = Math.random() * Math.PI * 2;
-            const scale = 0.8 + Math.random() * 0.5;
+            const scale = 1.2 + Math.random() * 0.8; // Increased from 0.8 + random * 0.5
             tree.scale.set(scale, scale, scale);
             
             this.scene.add(tree);
@@ -251,11 +251,27 @@ export class Terrain {
             const rock = this.createRock();
             rock.position.set(x, y, z);
             rock.rotation.y = Math.random() * Math.PI * 2;
-            const scale = 0.5 + Math.random() * 0.7;
+            const scale = 0.6 + Math.random() * 0.9; // Increased from 0.5 + random * 0.7
             rock.scale.set(scale, scale, scale);
             
             this.scene.add(rock);
             chunkObjects.push(rock);
+        }
+        
+        // Add flowers (was missing implementation before)
+        for (let i = 0; i < numFlowers; i++) {
+            const x = centerX + (Math.random() - 0.5) * this.chunkSize * 0.9;
+            const z = centerZ + (Math.random() - 0.5) * this.chunkSize * 0.9;
+            const y = this.getHeightAt(x, z);
+            
+            const flower = this.createFlower();
+            flower.position.set(x, y, z);
+            flower.rotation.y = Math.random() * Math.PI * 2;
+            const scale = 0.8 + Math.random() * 0.4;
+            flower.scale.set(scale, scale, scale);
+            
+            this.scene.add(flower);
+            chunkObjects.push(flower);
         }
         
         // Store the chunk
@@ -265,27 +281,56 @@ export class Terrain {
     createTree() {
         const tree = new THREE.Group();
         
-        // Create the trunk
-        const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.8, 4, 8);
+        // Create a more detailed trunk
+        const trunkGeometry = new THREE.CylinderGeometry(0.6, 1.0, 5, 10);
         const trunkMaterial = new THREE.MeshStandardMaterial({
             color: 0x8B4513,
-            roughness: 0.9
+            roughness: 0.9,
+            metalness: 0.1
         });
         const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-        trunk.position.y = 2;
+        trunk.position.y = 2.5;
         trunk.castShadow = true;
         tree.add(trunk);
         
-        // Create the foliage as a simple cone
-        const foliageGeometry = new THREE.ConeGeometry(3, 6, 8);
-        const foliageMaterial = new THREE.MeshStandardMaterial({
-            color: 0x2E8B57,
-            roughness: 0.8
-        });
-        const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
-        foliage.position.y = 6;
-        foliage.castShadow = true;
-        tree.add(foliage);
+        // Create more detailed foliage - multiple layers
+        const foliageColors = [0x2E8B57, 0x3CB371, 0x228B22]; // Different shades of green
+        
+        // Bottom layer - wider
+        const foliage1 = new THREE.Mesh(
+            new THREE.ConeGeometry(4.5, 6, 10),
+            new THREE.MeshStandardMaterial({
+                color: foliageColors[0],
+                roughness: 0.8
+            })
+        );
+        foliage1.position.y = 5;
+        foliage1.castShadow = true;
+        tree.add(foliage1);
+        
+        // Middle layer
+        const foliage2 = new THREE.Mesh(
+            new THREE.ConeGeometry(3.8, 5, 10),
+            new THREE.MeshStandardMaterial({
+                color: foliageColors[1],
+                roughness: 0.8
+            })
+        );
+        foliage2.position.y = 8.5;
+        foliage2.castShadow = true;
+        tree.add(foliage2);
+        
+        // Top layer - narrower
+        const foliage3 = new THREE.Mesh(
+            new THREE.ConeGeometry(2.5, 5, 8),
+            new THREE.MeshStandardMaterial({
+                color: foliageColors[2],
+                roughness: 0.8
+            })
+        );
+        foliage3.position.y = 11.5;
+        foliage3.castShadow = true;
+        tree.add(foliage3);
         
         return tree;
     }
@@ -293,17 +338,89 @@ export class Terrain {
     createRock() {
         const rock = new THREE.Group();
         
-        // Simple rock
-        const rockGeometry = new THREE.DodecahedronGeometry(1.5, 0);
+        // Main rock - more detailed
+        const rockGeometry = new THREE.DodecahedronGeometry(1.8, 1); // Increased size and detail
         const rockMaterial = new THREE.MeshStandardMaterial({
             color: 0x808080,
-            roughness: 0.9
+            roughness: 0.9,
+            metalness: 0.1
         });
         
         const mainRock = new THREE.Mesh(rockGeometry, rockMaterial);
         mainRock.castShadow = true;
+        mainRock.position.y = 0.2; // Slightly raised
         rock.add(mainRock);
         
+        // Add a smaller rock beside it for more natural look
+        const smallRockGeometry = new THREE.DodecahedronGeometry(1, 0);
+        const smallRock = new THREE.Mesh(smallRockGeometry, rockMaterial);
+        smallRock.position.set(1.2, 0, 0.5);
+        smallRock.scale.set(0.6, 0.6, 0.6);
+        smallRock.rotation.set(Math.random(), Math.random(), Math.random());
+        smallRock.castShadow = true;
+        rock.add(smallRock);
+        
         return rock;
+    }
+    
+    createFlower() {
+        const flower = new THREE.Group();
+        
+        // Randomly select flower color
+        const flowerColors = [
+            0xFFD700, // Yellow
+            0xFF1493, // Pink
+            0xFF6347, // Tomato
+            0x9370DB, // Purple
+            0xFF4500  // Orange Red
+        ];
+        const selectedColor = flowerColors[Math.floor(Math.random() * flowerColors.length)];
+        
+        // Create stem
+        const stemGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1.2, 8);
+        const stemMaterial = new THREE.MeshStandardMaterial({
+            color: 0x228B22, // Green
+            roughness: 0.8
+        });
+        const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+        stem.position.y = 0.6;
+        stem.castShadow = true;
+        flower.add(stem);
+        
+        // Create flower head
+        const petalGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+        const petalMaterial = new THREE.MeshStandardMaterial({
+            color: selectedColor,
+            roughness: 0.7,
+            metalness: 0.1
+        });
+        
+        // Center of flower
+        const centerGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+        const centerMaterial = new THREE.MeshStandardMaterial({
+            color: 0xFFFF00, // Yellow center
+            roughness: 0.7
+        });
+        const center = new THREE.Mesh(centerGeometry, centerMaterial);
+        center.position.y = 1.25;
+        center.castShadow = true;
+        flower.add(center);
+        
+        // Create petals in a circle
+        const numPetals = 6;
+        const radius = 0.25;
+        for (let i = 0; i < numPetals; i++) {
+            const angle = (i / numPetals) * Math.PI * 2;
+            const petal = new THREE.Mesh(petalGeometry, petalMaterial);
+            petal.position.set(
+                Math.cos(angle) * radius,
+                1.25,
+                Math.sin(angle) * radius
+            );
+            petal.castShadow = true;
+            flower.add(petal);
+        }
+        
+        return flower;
     }
 } 
