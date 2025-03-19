@@ -7,7 +7,8 @@ export class InputHandler {
             backward: false,
             left: false,
             right: false,
-            brake: false
+            brake: false,
+            nitro: false
         };
         
         this.joystick = null;
@@ -63,6 +64,9 @@ export class InputHandler {
                 break;
             case 'Space':
                 this.keys.brake = isPressed;
+                break;
+            case 'KeyN':
+                this.keys.nitro = isPressed;
                 break;
         }
         

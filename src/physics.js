@@ -20,6 +20,7 @@ export class TruckPhysics {
         this.wheelBase = 5.6; // Wider wheelbase for monster truck
         this.maxSteeringAngle = 0.6; // Significantly increased for much better turning capability
         this.maxSpeedKmh = 120; // Realistic top speed
+        this.normalMaxSpeedKmh = 120; // Store normal max speed for nitro
         
         // Tire friction parameters - much reduced for better turning
         this.lateralFriction = 2.5; // Significantly reduced from 5.0 to allow for much better turning
@@ -67,6 +68,10 @@ export class TruckPhysics {
         // Track boundary collisions to avoid playing sounds too frequently
         this.lastBoundaryCollisionTime = 0;
         this.boundaryCollisionCooldown = 500; // ms
+        
+        // Nitro state
+        this.nitroActive = false;
+        this.nitroMultiplier = 2.0; // Speed multiplier when nitro is active
     }
 
     update(deltaTime, getTerrainHeightAt, getTerrainRoughnessAt) {
@@ -333,22 +338,35 @@ export class TruckPhysics {
         // Calculate effective steering angle (degrees)
         const steeringAngle = this.steering * this.maxSteeringAngle;
         
-        // Return current physics state
+        // End of update, return important physics data
         return {
-            position: this.position,
+            position: this.position.clone(),
             rotation: this.rotation,
+            wheelRotationSpeed: forwardVelocity * 0.5,
+            steering: this.steering,
+            steeringAngle: this.steering * this.maxSteeringAngle,
             speed: speed,
-            speedKmh: speedKmh,
-            steeringAngle: steeringAngle,
+            velocity: this.velocity.clone(),
+            groundNormal: this.groundNormal.clone(),
             groundContact: this.groundContact,
-            groundNormal: this.groundNormal,
-            wheelRotationSpeed: wheelRotationSpeed,
-            bounce: this.bounce // Add bounce info for visual effects
+            bounce: this.bounce,
+            nitroActive: this.nitroActive
         };
     }
     
     // Process user inputs
     applyUserInput(input, deltaTime = 0.016) {
+        // Apply nitro effect
+        if (input.nitro && !this.nitroActive) {
+            // Activate nitro
+            this.nitroActive = true;
+            this.maxSpeedKmh = this.normalMaxSpeedKmh * this.nitroMultiplier;
+        } else if (!input.nitro && this.nitroActive) {
+            // Deactivate nitro
+            this.nitroActive = false;
+            this.maxSpeedKmh = this.normalMaxSpeedKmh;
+        }
+        
         // Set target controls based on input
         if (input.forward) {
             // Progressive throttle application
@@ -422,6 +440,10 @@ export class TruckPhysics {
         // Reset bounce effects
         this.bounce = 0;
         this.bounceVelocity = 0;
+        
+        // Reset nitro state
+        this.nitroActive = false;
+        this.maxSpeedKmh = this.normalMaxSpeedKmh;
         
         return this.position;
     }

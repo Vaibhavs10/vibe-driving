@@ -274,7 +274,8 @@ export class Game {
                 controls: this.input.getInputState(),
                 fps: this.fps,
                 terrainHeight: terrainHeight,
-                groundContact: this.physics.groundContact
+                groundContact: this.physics.groundContact,
+                nitroActive: this.physics.nitroActive
             });
             
             // Render scene

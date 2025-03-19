@@ -10,6 +10,9 @@ export class Truck {
             wheelRotation: 0,
             prevSpeed: 0
         };
+        
+        // Create exhaust flame objects for nitro effect
+        this.exhaustFlames = [];
     }
 
     build() {
@@ -202,6 +205,27 @@ export class Truck {
             exhaustTip.position.set(side * bodyWidth * 0.4, bodyHeight * 0.6 + exhaustHeight * 0.5 + 0.25, -bodyLength * 0.3 - exhaustHeight * 0.08);
             exhaustTip.rotation.x = Math.PI / 12; // Match the exhaust angle
             this.truckGroup.add(exhaustTip);
+            
+            // Add nitro flame (initially invisible)
+            const flameGeometry = new THREE.ConeGeometry(exhaustRadius * 1.5, 2.0, 8);
+            const flameMaterial = new THREE.MeshStandardMaterial({
+                color: 0x00BFFF, // Blue flame
+                emissive: 0x00BFFF,
+                emissiveIntensity: 1.0,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            const flame = new THREE.Mesh(flameGeometry, flameMaterial);
+            flame.position.set(
+                side * bodyWidth * 0.4,
+                bodyHeight * 0.6 + exhaustHeight * 0.5 + 0.5, 
+                -bodyLength * 0.3 - exhaustHeight * 0.15
+            );
+            flame.rotation.x = Math.PI / 12 + Math.PI; // Match exhaust angle but point outward
+            flame.visible = false; // Initially hidden
+            this.truckGroup.add(flame);
+            this.exhaustFlames.push(flame); // Store reference
         });
     }
     
@@ -345,6 +369,9 @@ export class Truck {
         
         // Update wheel rotation and steering
         this.updateWheels(deltaTime, wheelRotationSpeed, steeringAngle);
+        
+        // Update nitro visual effects
+        this.updateNitroEffects(physicsResult.nitroActive, deltaTime);
     }
     
     updateAnimations(deltaTime, steeringAngle, speed, groundNormal) {
@@ -374,6 +401,24 @@ export class Truck {
             // Steer only front wheels (index 2,3) - more dramatic for better visual feedback
             if (index >= 2) {
                 wheel.rotation.y = steeringAngle * 1.2; // Increased from 1.0 for more dramatic steering visuals
+            }
+        });
+    }
+    
+    // New method to update nitro visual effects
+    updateNitroEffects(nitroActive, deltaTime) {
+        // Show/hide flames based on nitro state
+        this.exhaustFlames.forEach((flame, index) => {
+            flame.visible = nitroActive;
+            
+            if (nitroActive) {
+                // Animate flame size for flickering effect
+                const pulseRate = 10 + Math.sin(Date.now() / 100) * 5;
+                const scaleY = 1.0 + Math.sin(Date.now() / pulseRate) * 0.2;
+                flame.scale.y = scaleY;
+                
+                // Slightly randomize the flame rotation for more dynamic effect
+                flame.rotation.z = Math.sin(Date.now() / 120 + index) * 0.1;
             }
         });
     }

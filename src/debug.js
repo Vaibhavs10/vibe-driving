@@ -68,6 +68,10 @@ export class DebugDisplay {
             html += `Speed: ${(data.speed * 3.6).toFixed(2)} km/h<br>`;
         }
         
+        if (data.nitroActive) {
+            html += `<span style="color: #ff5500; font-weight: bold;">NITRO ACTIVE!</span><br>`;
+        }
+        
         if (data.controls) {
             html += `<br><strong>Controls:</strong> `;
             const activeControls = [];
@@ -76,6 +80,7 @@ export class DebugDisplay {
             if (data.controls.left) activeControls.push('Left');
             if (data.controls.right) activeControls.push('Right');
             if (data.controls.brake) activeControls.push('Brake');
+            if (data.controls.nitro) activeControls.push('<span style="color: #ff5500;">Nitro</span>');
             html += activeControls.length ? activeControls.join(', ') : 'None';
         }
         
@@ -133,6 +138,7 @@ export class DebugDisplay {
             <strong>CONTROLS</strong><br>
             WASD / Arrow keys: Drive<br>
             Space: Brake<br>
+            N: <span style="color: #ff5500;">Nitro Boost</span><br>
             R: Reset position<br><br>
             On mobile, use the joystick in the bottom left corner.
         `;
