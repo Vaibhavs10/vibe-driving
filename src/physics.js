@@ -14,11 +14,12 @@ export class TruckPhysics {
         // Physics constants
         this.mass = 800;
         this.engineForce = 40000;
-        this.brakingForce = 15000;
+        this.brakingForce = 25000;
         this.rollingResistance = 0.01;
         this.dragCoefficient = 0.05;
         this.wheelBase = 3.5;
         this.maxSteeringAngle = 0.6;
+        this.maxSpeedKmh = 120;
         
         // Terrain interaction
         this.groundContact = true;
@@ -92,9 +93,18 @@ export class TruckPhysics {
             this.acceleration.add(rollResistAccel);
         }
         
+        // Apply speed limit if velocity exceeds maximum speed
+        const speed = Math.sqrt(speedSq);
+        const speedKmh = speed * 3.6; // Convert m/s to km/h (1 m/s = 3.6 km/h)
+        
+        if (speedKmh > this.maxSpeedKmh) {
+            // Apply limiting force in the opposite direction of movement
+            const limitFactor = this.maxSpeedKmh / speedKmh;
+            this.velocity.multiplyScalar(limitFactor);
+        }
+        
         // Apply steering as angular acceleration
         // Simple model: angular acceleration proportional to steering angle and speed
-        const speed = Math.sqrt(speedSq);
         const steeringEffect = this.steering * (speed / 10); // Scale with speed
         this.angularVelocity += steeringEffect * 2 * deltaTime;
         
