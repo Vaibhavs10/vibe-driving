@@ -5,9 +5,9 @@ export class GameCamera {
         this.camera = camera;
         this.target = null;
         
-        // Camera parameters
-        this.defaultHeight = 12;
-        this.defaultDistance = 20;
+        // Camera parameters - adjusted for flat terrain
+        this.defaultHeight = 15; // Increased from 12 for better overview
+        this.defaultDistance = 25; // Increased from 20 for wider field of view
         
         // Current values for smooth transition
         this.currentHeight = this.defaultHeight;
@@ -17,7 +17,7 @@ export class GameCamera {
         // Smoothing factors
         this.positionSmoothing = 0.1;
         this.rotationSmoothing = 0.2;
-        this.targetOffset = new THREE.Vector3(0, 3, 0); // Look at point above truck
+        this.targetOffset = new THREE.Vector3(0, 2, 0); // Reduced from 3 for flatter perspective
     }
     
     setTarget(target) {
@@ -32,8 +32,8 @@ export class GameCamera {
         
         // Adjust camera height and distance based on speed for a dynamic feel
         const heightFactor = Math.min(1, targetSpeed / 30);
-        const targetHeight = this.defaultHeight + heightFactor * 5;
-        const targetDistance = this.defaultDistance + heightFactor * 5;
+        const targetHeight = this.defaultHeight + heightFactor * 6; // Increased from 5 for higher perspective at speed
+        const targetDistance = this.defaultDistance + heightFactor * 8; // Increased from 5 for better visibility at speed
         
         // Smooth transitions
         this.currentHeight += (targetHeight - this.currentHeight) * this.positionSmoothing;
@@ -58,7 +58,7 @@ export class GameCamera {
         const lookAheadFactor = Math.min(1, targetSpeed / 10);
         const lookAtPosition = targetPosition.clone()
             .add(this.targetOffset)
-            .add(truckDirection.clone().multiplyScalar(5 * lookAheadFactor));
+            .add(truckDirection.clone().multiplyScalar(8 * lookAheadFactor)); // Increased from 5 for looking further ahead
         
         // Smoothly update the look at position
         this.currentLookAt.lerp(lookAtPosition, this.rotationSmoothing);

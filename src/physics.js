@@ -3,7 +3,7 @@ import * as THREE from 'three';
 export class TruckPhysics {
     constructor() {
         // Basic movement
-        this.position = new THREE.Vector3(0, 2.0, 0); // Higher starting position for monster truck
+        this.position = new THREE.Vector3(0, 0.5, 0); // Lower starting position to match truck visual
         this.velocity = new THREE.Vector3(0, 0, 0);
         this.acceleration = new THREE.Vector3(0, 0, 0);
         
@@ -22,7 +22,7 @@ export class TruckPhysics {
         this.maxSpeedKmh = 150; // Higher top speed
         
         // Suspension properties - new for monster truck
-        this.suspensionHeight = 2.2; // Higher ground clearance
+        this.suspensionHeight = 0.8; // Reduced from 2.2 - Lower ground clearance so truck doesn't hover
         this.suspensionStiffness = 0.7; // Softer suspension for bouncy effect
         this.suspensionDamping = 0.4; // Less damping for more bounce
         this.suspensionTravel = 1.2; // More suspension travel
@@ -177,7 +177,7 @@ export class TruckPhysics {
         const terrainY = getTerrainHeightAt(this.position.x, this.position.z);
         const terrainRoughness = getTerrainRoughnessAt(this.position.x, this.position.z);
         
-        // Add cartoon bounce effect to suspension
+        // Add cartoon bounce effect to suspension - position directly on terrain plus suspension
         const targetHeight = terrainY + this.suspensionHeight + (this.bounce * 0.7);
         
         // Apply suspension force with cartoony bounce
@@ -221,8 +221,8 @@ export class TruckPhysics {
         this.bounce *= 0.95; // Decay bounce over time
         
         // Simple collision with ground (prevent going below terrain)
-        if (this.position.y < terrainY + 0.5) { // Minimum ground clearance
-            this.position.y = terrainY + 0.5;
+        if (this.position.y < terrainY + 0.1) { // Reduced minimum ground clearance from 0.5 to 0.1
+            this.position.y = terrainY + 0.1;
             this.velocity.y = Math.max(0, this.velocity.y);
         }
         
@@ -275,8 +275,8 @@ export class TruckPhysics {
     
     // Reset the truck physics
     reset() {
-        // Reset position, higher off ground for monster truck
-        this.position.set(0, 2.0, 0);
+        // Reset position on flat terrain
+        this.position.set(0, this.suspensionHeight, 0); // Position the truck at suspension height above ground
         this.velocity.set(0, 0, 0);
         this.acceleration.set(0, 0, 0);
         

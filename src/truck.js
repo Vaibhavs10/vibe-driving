@@ -132,8 +132,8 @@ export class Truck {
         // Create monster truck oversized wheels
         this.createWheels();
         
-        // Set initial position - higher off the ground for monster truck look
-        this.truckGroup.position.set(0, 2.0, 0);
+        // Set initial position - adjusted to be closer to the ground
+        this.truckGroup.position.set(0, 0.5, 0);
         
         return this.truckGroup;
     }
@@ -253,12 +253,12 @@ export class Truck {
             metalness: 0.8
         });
         
-        // Adjust wheel positions for monster truck - higher off the ground
+        // Adjust wheel positions for monster truck - closer to the ground
         const wheelPositions = [
-            [-2.2, -0.3, -2.8], // back left
-            [2.2, -0.3, -2.8],  // back right
-            [-2.2, -0.3, 2.8],  // front left
-            [2.2, -0.3, 2.8]    // front right
+            [-2.2, -1.3, -2.8], // back left - lowered y value
+            [2.2, -1.3, -2.8],  // back right - lowered y value
+            [-2.2, -1.3, 2.8],  // front left - lowered y value
+            [2.2, -1.3, 2.8]    // front right - lowered y value
         ];
         
         wheelPositions.forEach((position, index) => {
@@ -380,7 +380,7 @@ export class Truck {
     
     reset(position) {
         // Reset position and rotation
-        this.truckGroup.position.copy(position || new THREE.Vector3(0, 2, 0));
+        this.truckGroup.position.copy(position || new THREE.Vector3(0, 0.5, 0));
         this.truckGroup.rotation.set(0, 0, 0);
         
         // Reset animation properties

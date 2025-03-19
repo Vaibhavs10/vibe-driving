@@ -154,15 +154,15 @@ export class Game {
     setupLights() {
         // Main directional light (sun) - warm golden Ghibli-inspired sunlight
         const sunLight = new THREE.DirectionalLight(0xFFE0B3, 1.5); // More golden, warmer light
-        sunLight.position.set(50, 80, 50);
+        sunLight.position.set(50, 100, 50); // Increased height for better coverage of flat terrain
         sunLight.castShadow = true;
         sunLight.shadow.mapSize.width = 2048;
         sunLight.shadow.mapSize.height = 2048;
-        sunLight.shadow.camera.far = 200;
+        sunLight.shadow.camera.far = 400; // Increased from 200 to support larger terrain
         sunLight.shadow.bias = -0.0001;
         
-        // Set shadow camera dimensions - increased for better coverage
-        const shadowSize = 120;
+        // Set shadow camera dimensions - increased significantly for better coverage on flat terrain
+        const shadowSize = 200; // Increased from 120 for wider shadow area
         sunLight.shadow.camera.left = -shadowSize;
         sunLight.shadow.camera.right = shadowSize;
         sunLight.shadow.camera.top = shadowSize;
@@ -171,12 +171,12 @@ export class Game {
         this.scene.add(sunLight);
         
         // Fill light to soften shadows - more pastel blue for contrast
-        const fillLight = new THREE.DirectionalLight(0xCCE5FF, 0.6); // Increased intensity slightly for softer shadows
+        const fillLight = new THREE.DirectionalLight(0xCCE5FF, 0.7); // Increased intensity for flat terrain
         fillLight.position.set(-50, 30, -50);
         this.scene.add(fillLight);
         
         // Add a subtle ground bounce light with warmer tones
-        const bounceLight = new THREE.HemisphereLight(0xFFF0D8, 0x87ABC8, 0.5); // Warmer ground reflection, increased intensity
+        const bounceLight = new THREE.HemisphereLight(0xFFF0D8, 0x87ABC8, 0.6); // Increased intensity for flat terrain
         this.scene.add(bounceLight);
     }
     

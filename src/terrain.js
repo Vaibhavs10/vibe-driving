@@ -3,8 +3,8 @@ import * as THREE from 'three';
 export class Terrain {
     constructor(scene) {
         this.scene = scene;
-        this.groundSize = 2000;
-        this.groundSegments = 200;
+        this.groundSize = 5000; // Increased from 2000 to make the canvas larger but still finite
+        this.groundSegments = 50; // Reduced since we don't need as many segments for a flat terrain
         this.terrainMesh = null;
         this.heightData = null;
         this.decorationChunks = new Map();
@@ -21,8 +21,8 @@ export class Terrain {
             this.groundSegments
         );
         
-        // Apply height variation
-        this.applyHeightVariation(groundGeometry);
+        // Create flat height data (no variation)
+        this.createFlatHeightData(groundGeometry);
         
         // Create ground material with softer, more Ghibli-inspired colors
         const groundMaterial = new THREE.MeshStandardMaterial({
@@ -41,46 +41,26 @@ export class Terrain {
         return this.terrainMesh;
     }
     
-    applyHeightVariation(groundGeometry) {
+    createFlatHeightData(groundGeometry) {
         const vertices = groundGeometry.attributes.position.array;
         const width = this.groundSegments + 1;
         const height = this.groundSegments + 1;
         
-        // Create height data array
+        // Create height data array initialized to zero (flat terrain)
         this.heightData = new Float32Array(width * height);
         
         for (let i = 0; i < vertices.length; i += 3) {
             const x = vertices[i];
             const z = vertices[i + 1]; // Note: y is up in geometry, z in world
             
-            // Simplified noise function - mix of different frequencies
-            const nx = x / this.groundSize * 2;
-            const nz = z / this.groundSize * 2;
-            
-            // Simplifed multi-octave noise with more Ghibli-like rolling hills
-            let height = 0;
-            height += this.simplifiedNoise(nx * 1.2, nz * 1.2) * 9; // Increased amplitude for more pronounced hills
-            height += this.simplifiedNoise(nx * 4, nz * 4) * 2.5;   // Medium details
-            height += this.simplifiedNoise(nx * 12, nz * 12) * 0.4; // Small details, reduced for smoother appearance
-            
-            // Add occasional gentle hills (Ghibli style)
-            const hillFactor = this.simplifiedNoise(nx * 0.5, nz * 0.5);
-            if (hillFactor > 0.6) {
-                height += 3 * (hillFactor - 0.6);
-            }
-            
-            // Flatten center area for gameplay
-            const distanceFromCenter = Math.sqrt(x * x + z * z);
-            const flattenFactor = 1 - Math.max(0, 1 - distanceFromCenter / 30);
-            height *= flattenFactor;
-            
-            vertices[i + 2] = height; // Apply height to geometry
+            // Set all heights to 0 for completely flat terrain
+            vertices[i + 2] = 0;
             
             // Store in height data array
             const ix = Math.floor((x + this.groundSize / 2) / this.groundSize * width);
             const iz = Math.floor((z + this.groundSize / 2) / this.groundSize * height);
             if (ix >= 0 && ix < width && iz >= 0 && iz < height) {
-                this.heightData[iz * width + ix] = height;
+                this.heightData[iz * width + ix] = 0;
             }
         }
         
@@ -89,92 +69,18 @@ export class Terrain {
     }
     
     simplifiedNoise(x, y) {
-        // Simple noise function approximation
-        const X = Math.floor(x) & 255;
-        const Y = Math.floor(y) & 255;
-        
-        const xf = x - Math.floor(x);
-        const yf = y - Math.floor(y);
-        
-        // Simple smoothing
-        const u = this.fade(xf);
-        const v = this.fade(yf);
-        
-        // Simple hash
-        const A = (X + Y * 57) & 255;
-        const B = (X + 1 + Y * 57) & 255;
-        const C = (X + (Y + 1) * 57) & 255;
-        const D = (X + 1 + (Y + 1) * 57) & 255;
-        
-        // Simple gradient
-        const res = this.lerp(
-            this.lerp(this.grad(A, xf, yf), this.grad(B, xf - 1, yf), u),
-            this.lerp(this.grad(C, xf, yf - 1), this.grad(D, xf - 1, yf - 1), u),
-            v
-        );
-        
-        return res;
-    }
-    
-    fade(t) {
-        return t * t * t * (t * (t * 6 - 15) + 10);
-    }
-    
-    lerp(a, b, t) {
-        return a + t * (b - a);
-    }
-    
-    grad(hash, x, y) {
-        const h = hash & 15;
-        const grad2 = 1 + (h & 7);
-        return ((h & 8) ? -grad2 : grad2) * x + ((h & 4) ? -grad2 : grad2) * y;
+        // Simple noise function approximation - now returns 0 for flat terrain
+        return 0;
     }
     
     getHeightAt(x, z) {
-        if (!this.heightData) return 0;
-        
-        // Convert world coordinates to heightmap coordinates
-        const width = this.groundSegments + 1;
-        const height = this.groundSegments + 1;
-        
-        const ix = Math.floor((x + this.groundSize / 2) / this.groundSize * width);
-        const iz = Math.floor((z + this.groundSize / 2) / this.groundSize * height);
-        
-        // Boundary check
-        if (ix < 0 || ix >= width - 1 || iz < 0 || iz >= height - 1) {
-            return 0;
-        }
-        
-        // Get the four nearest height values
-        const h00 = this.heightData[iz * width + ix];
-        const h10 = this.heightData[iz * width + (ix + 1)];
-        const h01 = this.heightData[(iz + 1) * width + ix];
-        const h11 = this.heightData[(iz + 1) * width + (ix + 1)];
-        
-        // Determine fractional position
-        const percentX = (x + this.groundSize / 2) / this.groundSize * width - ix;
-        const percentZ = (z + this.groundSize / 2) / this.groundSize * height - iz;
-        
-        // Bilinear interpolation
-        const h0 = h00 * (1 - percentX) + h10 * percentX;
-        const h1 = h01 * (1 - percentX) + h11 * percentX;
-        const finalHeight = h0 * (1 - percentZ) + h1 * percentZ;
-        
-        return finalHeight;
+        // Always return 0 for a flat terrain
+        return 0;
     }
     
     getRoughnessAt(x, z) {
-        // Calculate roughness based on nearby height samples
-        const spacing = 2;
-        const h1 = this.getHeightAt(x - spacing, z - spacing);
-        const h2 = this.getHeightAt(x + spacing, z - spacing);
-        const h3 = this.getHeightAt(x - spacing, z + spacing);
-        const h4 = this.getHeightAt(x + spacing, z + spacing);
-        
-        // Measure variation
-        const maxH = Math.max(h1, h2, h3, h4);
-        const minH = Math.min(h1, h2, h3, h4);
-        return maxH - minH;
+        // Always return 0 since the terrain is perfectly flat
+        return 0;
     }
     
     updateDecorations(truckPosition) {
@@ -240,7 +146,8 @@ export class Terrain {
             
             const x = treeClusterX + Math.cos(angle) * distance;
             const z = treeClusterZ + Math.sin(angle) * distance;
-            const y = this.getHeightAt(x, z);
+            // Flat terrain, so y is always 0
+            const y = 0;
             
             // Create tree and add to scene
             const tree = this.createTree();
@@ -259,7 +166,8 @@ export class Terrain {
         for (let i = 0; i < numRocks; i++) {
             const x = centerX + (Math.random() - 0.5) * this.chunkSize * 0.8;
             const z = centerZ + (Math.random() - 0.5) * this.chunkSize * 0.8;
-            const y = this.getHeightAt(x, z);
+            // Flat terrain, so y is always 0
+            const y = 0;
             
             const rock = this.createRock();
             rock.position.set(x, y, z);
@@ -284,7 +192,8 @@ export class Terrain {
                 
                 const x = clusterX + Math.cos(angle) * radius;
                 const z = clusterZ + Math.sin(angle) * radius;
-                const y = this.getHeightAt(x, z);
+                // Flat terrain, so y is always 0
+                const y = 0;
                 
                 const flower = this.createFlower();
                 flower.position.set(x, y, z);
