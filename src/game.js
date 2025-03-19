@@ -27,14 +27,14 @@ export class Game {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         
-        // Set sky color - enhanced to a more vibrant blue
-        const skyColor = new THREE.Color(0x87CEEB); // Brighter sky blue
+        // Set sky color - enhanced to a more Ghibli-inspired pastel blue
+        const skyColor = new THREE.Color(0xAFD8F0); // Softer pastel blue
         this.renderer.setClearColor(skyColor);
         this.scene.background = skyColor;
         
-        // Create fog for distance fading - more subtle and atmospheric
-        const horizonColor = new THREE.Color(0xF8E8D8); // Warmer horizon color
-        this.scene.fog = new THREE.FogExp2(horizonColor, 0.005); // Slightly reduced fog density
+        // Create fog for distance fading - more subtle, warm, and dreamlike
+        const horizonColor = new THREE.Color(0xFFEBD6); // Warmer golden horizon color
+        this.scene.fog = new THREE.FogExp2(horizonColor, 0.004); // Slightly reduced fog density for dreamy distance
         
         // Add ambient light - increased intensity for better illumination
         const ambientLight = new THREE.AmbientLight(0xE8F1FF, 0.6); // Increased from 0.5 to 0.6
@@ -116,15 +116,15 @@ export class Game {
     }
     
     createSkybox() {
-        // Create a sky gradient using a large sphere with enhanced colors
+        // Create a sky gradient using a large sphere with Ghibli-inspired colors
         const skyDome = new THREE.Mesh(
             new THREE.SphereGeometry(900, 32, 32),
             new THREE.ShaderMaterial({
                 uniforms: {
-                    topColor: { value: new THREE.Color(0x5D9FE4) }, // Rich sky blue 
-                    bottomColor: { value: new THREE.Color(0xFFE9CF) }, // Warmer horizon
+                    topColor: { value: new THREE.Color(0x7FB3DC) }, // Softer sky blue, more pastel
+                    bottomColor: { value: new THREE.Color(0xFFEED4) }, // Warmer golden horizon
                     offset: { value: 400 },
-                    exponent: { value: 0.7 } // Increased from 0.6 for more distinct gradient
+                    exponent: { value: 0.6 } // Smoother transition for dreamy look
                 },
                 vertexShader: `
                     varying vec3 vWorldPosition;
@@ -152,9 +152,9 @@ export class Game {
     }
     
     setupLights() {
-        // Main directional light (sun) - enhanced colors and intensity
-        const sunLight = new THREE.DirectionalLight(0xFFF0D6, 1.4); // Warmer and brighter (from 1.2 to 1.4)
-        sunLight.position.set(50, 100, 50);
+        // Main directional light (sun) - warm golden Ghibli-inspired sunlight
+        const sunLight = new THREE.DirectionalLight(0xFFE0B3, 1.5); // More golden, warmer light
+        sunLight.position.set(50, 80, 50);
         sunLight.castShadow = true;
         sunLight.shadow.mapSize.width = 2048;
         sunLight.shadow.mapSize.height = 2048;
@@ -162,7 +162,7 @@ export class Game {
         sunLight.shadow.bias = -0.0001;
         
         // Set shadow camera dimensions - increased for better coverage
-        const shadowSize = 120; // Increased from 100 to 120
+        const shadowSize = 120;
         sunLight.shadow.camera.left = -shadowSize;
         sunLight.shadow.camera.right = shadowSize;
         sunLight.shadow.camera.top = shadowSize;
@@ -170,13 +170,13 @@ export class Game {
         
         this.scene.add(sunLight);
         
-        // Fill light to soften shadows - enhanced
-        const fillLight = new THREE.DirectionalLight(0xC4E8FF, 0.5); // Increased from 0.4 to 0.5
+        // Fill light to soften shadows - more pastel blue for contrast
+        const fillLight = new THREE.DirectionalLight(0xCCE5FF, 0.6); // Increased intensity slightly for softer shadows
         fillLight.position.set(-50, 30, -50);
         this.scene.add(fillLight);
         
-        // Add a subtle ground bounce light for more depth
-        const bounceLight = new THREE.HemisphereLight(0xFFE8D0, 0x80A0CC, 0.4);
+        // Add a subtle ground bounce light with warmer tones
+        const bounceLight = new THREE.HemisphereLight(0xFFF0D8, 0x87ABC8, 0.5); // Warmer ground reflection, increased intensity
         this.scene.add(bounceLight);
     }
     
