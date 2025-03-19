@@ -3,7 +3,7 @@ import * as THREE from 'three';
 export class TruckPhysics {
     constructor() {
         // Basic movement
-        this.position = new THREE.Vector3(0, 2, 0);
+        this.position = new THREE.Vector3(0, 2.0, 0); // Higher starting position for monster truck
         this.velocity = new THREE.Vector3(0, 0, 0);
         this.acceleration = new THREE.Vector3(0, 0, 0);
         
@@ -11,15 +11,21 @@ export class TruckPhysics {
         this.rotation = 0;
         this.angularVelocity = 0;
         
-        // Physics constants
-        this.mass = 800;
-        this.engineForce = 40000;
-        this.brakingForce = 25000;
-        this.rollingResistance = 0.01;
-        this.dragCoefficient = 0.05;
-        this.wheelBase = 3.5;
-        this.maxSteeringAngle = 0.6;
-        this.maxSpeedKmh = 120;
+        // Physics constants - exaggerated for cartoon monster truck feel
+        this.mass = 1200; // Heavier monster truck
+        this.engineForce = 65000; // More powerful engine
+        this.brakingForce = 30000; // Stronger brakes
+        this.rollingResistance = 0.008; // Reduced rolling resistance for monster truck tires
+        this.dragCoefficient = 0.04; // Slightly reduced drag
+        this.wheelBase = 5.6; // Wider wheelbase for monster truck
+        this.maxSteeringAngle = 0.65; // Slightly increased steering angle
+        this.maxSpeedKmh = 150; // Higher top speed
+        
+        // Suspension properties - new for monster truck
+        this.suspensionHeight = 2.2; // Higher ground clearance
+        this.suspensionStiffness = 0.7; // Softer suspension for bouncy effect
+        this.suspensionDamping = 0.4; // Less damping for more bounce
+        this.suspensionTravel = 1.2; // More suspension travel
         
         // Terrain interaction
         this.groundContact = true;
@@ -43,6 +49,13 @@ export class TruckPhysics {
             right: false,
             brake: false
         };
+        
+        // Track height change to dampen rapid terrain transitions
+        this.previousTerrainHeight = null;
+        
+        // Track truck bounce for cartoony effects
+        this.bounce = 0;
+        this.bounceVelocity = 0;
     }
 
     update(deltaTime, getTerrainHeightAt, getTerrainRoughnessAt) {
@@ -103,13 +116,13 @@ export class TruckPhysics {
             this.velocity.multiplyScalar(limitFactor);
         }
         
-        // Apply steering as angular acceleration
+        // Apply steering as angular acceleration - more responsive for cartoon feel
         // Simple model: angular acceleration proportional to steering angle and speed
-        const steeringEffect = this.steering * (speed / 10); // Scale with speed
-        this.angularVelocity += steeringEffect * 2 * deltaTime;
+        const steeringEffect = this.steering * (speed / 8); // Scale with speed but more responsive
+        this.angularVelocity += steeringEffect * 2.5 * deltaTime; // Increased steering response
         
-        // Apply damping to angular velocity
-        this.angularVelocity *= 0.95;
+        // Apply damping to angular velocity - less for more drift
+        this.angularVelocity *= 0.92; // Reduced damping for more cartoony turning
         
         // Update rotation
         this.rotation += this.angularVelocity * deltaTime;
@@ -121,104 +134,168 @@ export class TruckPhysics {
         const prevPos = this.position.clone();
         
         // Update position using velocity
-        this.position.add(this.velocity.clone().multiplyScalar(deltaTime));
+        const movementVector = this.velocity.clone().multiplyScalar(deltaTime);
         
-        // Apply terrain height constraints
-        const terrainY = getTerrainHeightAt(this.position.x, this.position.z);
+        // Check for terrain height BEFORE we move, so we can adapt to changing terrain
+        const initialTerrainY = getTerrainHeightAt(this.position.x, this.position.z);
         
-        // Apply ground contact with suspension
-        const suspensionHeight = 1.5; // Height above the terrain
-        const targetHeight = terrainY + suspensionHeight;
+        // Define maxSafeTerrainChange here before it's used
+        const maxSafeTerrainChange = 4.0;  // Increased for monster truck (was 3.0)
         
-        // Apply terrain roughness to the vehicle physics
-        const roughness = getTerrainRoughnessAt(this.position.x, this.position.z);
-        
-        // Simple suspension - gradually adjust height
-        if (this.position.y < targetHeight) {
-            // Apply upward force proportional to depth
-            const depth = targetHeight - this.position.y;
-            const suspensionForce = 400 * depth - this.velocity.y * 50; // Spring + damping
-            this.velocity.y += suspensionForce * deltaTime / this.mass;
-            this.groundContact = true;
-        } else {
-            // Apply gravity more strongly when airborne to bring vehicle down
-            this.velocity.y -= 9.8 * deltaTime * 1.5;
+        // For substantial movements, check terrain at several points along the movement path
+        if (movementVector.length() > 1) {
+            // Check terrain at several points along the movement path
+            const steps = Math.ceil(movementVector.length());
+            const stepVector = movementVector.clone().divideScalar(steps);
             
-            // Detect if we're really airborne or just slightly above the terrain
-            this.groundContact = (this.position.y - targetHeight < 0.5);
+            let lastIntermediateTerrainY = initialTerrainY;
+            
+            for (let i = 1; i <= steps; i++) {
+                // Move a step and check terrain height
+                const intermediatePos = prevPos.clone().add(stepVector.clone().multiplyScalar(i));
+                const intermediateTerrainY = getTerrainHeightAt(intermediatePos.x, intermediatePos.z);
+                
+                // Dampen rapid terrain changes for intermediate positions too
+                let dampedIntermediateTerrainY = intermediateTerrainY;
+                const intTerrainHeightChange = intermediateTerrainY - lastIntermediateTerrainY;
+                const stepDeltaTime = deltaTime / steps;
+                
+                // Limit terrain change rate for smooth traversal
+                if (Math.abs(intTerrainHeightChange) > maxSafeTerrainChange * stepDeltaTime) {
+                    dampedIntermediateTerrainY = lastIntermediateTerrainY + 
+                        Math.sign(intTerrainHeightChange) * maxSafeTerrainChange * stepDeltaTime;
+                }
+                
+                lastIntermediateTerrainY = dampedIntermediateTerrainY;
+            }
         }
-
-        // Make sure we're not underground
-        if (this.position.y < terrainY + 0.2) {
-            this.position.y = terrainY + 0.2;
+        
+        // Apply movement
+        this.position.add(movementVector);
+        
+        // Terrain collision and suspension
+        const terrainY = getTerrainHeightAt(this.position.x, this.position.z);
+        const terrainRoughness = getTerrainRoughnessAt(this.position.x, this.position.z);
+        
+        // Add cartoon bounce effect to suspension
+        const targetHeight = terrainY + this.suspensionHeight + (this.bounce * 0.7);
+        
+        // Apply suspension force with cartoony bounce
+        if (this.position.y < targetHeight) {
+            // When hitting ground, determine bounce based on velocity and roughness
+            this.groundContact = true;
+            
+            // Calculate impact velocity and bounce accordingly
+            const impactVelocity = Math.max(0, -this.velocity.y);
+            
+            // Big impacts cause monster truck bounce
+            if (impactVelocity > 5) {
+                this.bounceVelocity = impactVelocity * 0.5; // Exaggerated bounce effect
+            }
+            
+            // Apply suspension stiffness
+            const compressionFactor = (targetHeight - this.position.y) / this.suspensionTravel;
+            const suspensionForce = compressionFactor * this.suspensionStiffness * 9.8 * this.mass;
+            
+            // Apply damping to suspension
+            const suspensionDampingForce = -this.velocity.y * this.suspensionDamping * this.mass;
+            
+            // Update position and velocity based on suspension
+            this.position.y = targetHeight;
+            this.velocity.y = Math.max(0, this.velocity.y); // Don't let it go negative when grounded
+            
+            // Set groundNormal based on terrain
+            this.groundNormal.set(0, 1, 0); // For simplicity, always up
+        } else {
+            // When airborne
+            this.groundContact = false;
+            
+            // Apply gravity normally
+            // Already done in acceleration section
+        }
+        
+        // Update bounce effect for cartoon feel
+        this.bounce += this.bounceVelocity * deltaTime;
+        this.bounceVelocity -= 5 * this.bounce * deltaTime; // Spring effect
+        this.bounceVelocity *= 0.95; // Damping
+        this.bounce *= 0.95; // Decay bounce over time
+        
+        // Simple collision with ground (prevent going below terrain)
+        if (this.position.y < terrainY + 0.5) { // Minimum ground clearance
+            this.position.y = terrainY + 0.5;
             this.velocity.y = Math.max(0, this.velocity.y);
         }
         
-        // Roll correction - adjust rotation based on terrain normal
-        if (this.groundContact) {
-            // Use terrain height at nearby points to determine terrain normal
-            const sampleDist = 2;
-            const heightLeft = getTerrainHeightAt(this.position.x - rightDir.x * sampleDist, this.position.z - rightDir.z * sampleDist);
-            const heightRight = getTerrainHeightAt(this.position.x + rightDir.x * sampleDist, this.position.z + rightDir.z * sampleDist);
-            const heightFront = getTerrainHeightAt(this.position.x + forwardDir.x * sampleDist, this.position.z + forwardDir.z * sampleDist);
-            const heightBack = getTerrainHeightAt(this.position.x - forwardDir.x * sampleDist, this.position.z - forwardDir.z * sampleDist);
-            
-            // Update terrain normal based on height differences
-            const sideSlope = Math.atan2(heightRight - heightLeft, sampleDist * 2);
-            const forwardSlope = Math.atan2(heightFront - heightBack, sampleDist * 2);
-            
-            // Set ground normal - this affects how the truck sits on terrain
-            this.groundNormal.set(-sideSlope, 1, -forwardSlope).normalize();
-        }
+        // Calculate wheel rotation speed
+        const wheelRotationSpeed = this.velocity.dot(forwardDir);
         
+        // Calculate effective steering angle (degrees)
+        const steeringAngle = this.steering * this.maxSteeringAngle;
+        
+        // Return current physics state
         return {
-            position: this.position.clone(),
+            position: this.position,
             rotation: this.rotation,
-            groundNormal: this.groundNormal.clone(),
             speed: speed,
-            wheelRotationSpeed: speed / 1.0, // For wheel animation
-            steeringAngle: this.steering * this.maxSteeringAngle
+            speedKmh: speedKmh,
+            steeringAngle: steeringAngle,
+            groundContact: this.groundContact,
+            groundNormal: this.groundNormal,
+            wheelRotationSpeed: wheelRotationSpeed,
+            bounce: this.bounce // Add bounce info for visual effects
         };
     }
-
+    
+    // Process user inputs
     applyUserInput(input) {
-        this.keys = input;
-        
-        // Convert key states to physics targets
-        this.targetThrottle = this.keys.forward ? 1 : 0;
-        this.targetBrake = this.keys.backward ? 1 : 0;
-        
-        // Steering control based on both left/right key states
-        if (this.keys.left && !this.keys.right) {
-            this.targetSteering = 1; // Full left
-        } else if (this.keys.right && !this.keys.left) {
-            this.targetSteering = -1; // Full right
+        // Set target controls based on input
+        if (input.forward) {
+            this.targetThrottle = 1.0;
+            this.targetBrake = 0;
+        } else if (input.backward) {
+            // Reverse at half power
+            this.targetThrottle = -0.6;
+            this.targetBrake = 0;
         } else {
-            this.targetSteering = 0; // Center
+            this.targetThrottle = 0;
+            this.targetBrake = 0;
         }
+        
+        // Braking takes priority over throttle
+        if (input.brake) {
+            this.targetBrake = 1.0;
+            this.targetThrottle = 0;
+        }
+        
+        // Steering input processing - more responsive for cartoon feel
+        this.targetSteering = 0;
+        if (input.left) this.targetSteering += 1.0;
+        if (input.right) this.targetSteering -= 1.0;
     }
-
+    
+    // Reset the truck physics
     reset() {
-        // Reset position and dynamics
-        this.position.set(0, 5, 0);
+        // Reset position, higher off ground for monster truck
+        this.position.set(0, 2.0, 0);
         this.velocity.set(0, 0, 0);
         this.acceleration.set(0, 0, 0);
+        
+        // Reset rotation
         this.rotation = 0;
         this.angularVelocity = 0;
         
         // Reset controls
         this.throttle = 0;
-        this.brake = 0; 
+        this.brake = 0;
         this.steering = 0;
-        this.targetSteering = 0;
         this.targetThrottle = 0;
         this.targetBrake = 0;
+        this.targetSteering = 0;
         
-        // Reset key states
-        Object.keys(this.keys).forEach(key => {
-            this.keys[key] = false;
-        });
+        // Reset bounce effects
+        this.bounce = 0;
+        this.bounceVelocity = 0;
         
-        return this.position.clone();
+        return this.position;
     }
 } 

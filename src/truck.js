@@ -13,12 +13,12 @@ export class Truck {
     }
 
     build() {
-        // Create a Ghibli-inspired truck base with rounded edges
-        const bodyWidth = 4.2;
-        const bodyHeight = 2.2;
-        const bodyLength = 6.5;
+        // Create a cartoon monster truck base with exaggerated proportions
+        const bodyWidth = 4.5;
+        const bodyHeight = 2.5;
+        const bodyLength = 7;
         
-        // Main body - more rounded box
+        // Main body - rounded box with more height for monster truck look
         const bodyGeometry = new THREE.BoxGeometry(bodyWidth, bodyHeight, bodyLength, 1, 1, 1);
         // Slightly round the edges by moving vertices
         const bodyPositions = bodyGeometry.attributes.position.array;
@@ -42,18 +42,18 @@ export class Truck {
         bodyGeometry.attributes.position.needsUpdate = true;
         bodyGeometry.computeVertexNormals();
         
-        // Warm Ghibli-inspired color for main body
+        // Vibrant cartoon monster truck color
         const bodyMaterial = new THREE.MeshStandardMaterial({
-            color: 0xE7A287, // Softer, warmer terracotta red
+            color: 0x4CAF50, // Bright green
             roughness: 0.6,
-            metalness: 0.1
+            metalness: 0.3
         });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
         body.castShadow = true;
         this.truckGroup.add(body);
         
-        // Add cabin/hood section
-        const cabinGeometry = new THREE.BoxGeometry(bodyWidth * 0.85, bodyHeight * 1.1, bodyLength * 0.45);
+        // Add raised cabin section
+        const cabinGeometry = new THREE.BoxGeometry(bodyWidth * 0.8, bodyHeight * 0.9, bodyLength * 0.4);
         // Round the cabin too
         const cabinPositions = cabinGeometry.attributes.position.array;
         for (let i = 0; i < cabinPositions.length; i += 3) {
@@ -63,13 +63,13 @@ export class Truck {
             
             // Round corners by moving vertices slightly inward
             const magnitude = 0.2;
-            if (Math.abs(x) > bodyWidth * 0.85/2 - 0.1) {
+            if (Math.abs(x) > bodyWidth * 0.8/2 - 0.1) {
                 cabinPositions[i] = Math.sign(x) * (Math.abs(x) - magnitude);
             }
-            if (Math.abs(y) > bodyHeight * 1.1/2 - 0.1) {
+            if (Math.abs(y) > bodyHeight * 0.9/2 - 0.1) {
                 cabinPositions[i + 1] = Math.sign(y) * (Math.abs(y) - magnitude);
             }
-            if (Math.abs(z) > bodyLength * 0.45/2 - 0.1) {
+            if (Math.abs(z) > bodyLength * 0.4/2 - 0.1) {
                 cabinPositions[i + 2] = Math.sign(z) * (Math.abs(z) - magnitude);
             }
         }
@@ -77,96 +77,188 @@ export class Truck {
         cabinGeometry.computeVertexNormals();
         
         const cabinMaterial = new THREE.MeshStandardMaterial({
-            color: 0xFFF0DB, // Warm cream color
+            color: 0x333333, // Dark gray
             roughness: 0.5,
             metalness: 0.2
         });
         const cabin = new THREE.Mesh(cabinGeometry, cabinMaterial);
-        cabin.position.set(0, bodyHeight * 0.4, bodyLength * 0.15);
+        cabin.position.set(0, bodyHeight * 0.5, bodyLength * 0.15);
         cabin.castShadow = true;
         this.truckGroup.add(cabin);
         
-        // Add windows with slight blue tint
+        // Add cartoon-style windows with blue tint
         const windowMaterial = new THREE.MeshStandardMaterial({
-            color: 0xADD8E6, // Light blue
+            color: 0x00BFFF, // Deeper blue
             roughness: 0.2,
             metalness: 0.5,
             transparent: true,
-            opacity: 0.9
+            opacity: 0.8
         });
         
         // Front window
-        const frontWindowGeometry = new THREE.BoxGeometry(bodyWidth * 0.7, bodyHeight * 0.5, 0.1);
+        const frontWindowGeometry = new THREE.BoxGeometry(bodyWidth * 0.65, bodyHeight * 0.45, 0.1);
         const frontWindow = new THREE.Mesh(frontWindowGeometry, windowMaterial);
-        frontWindow.position.set(0, bodyHeight * 0.6, bodyLength * 0.38);
+        frontWindow.position.set(0, bodyHeight * 0.7, bodyLength * 0.36);
         frontWindow.castShadow = false;
         this.truckGroup.add(frontWindow);
         
-        // Add headlights
-        const headlightGeometry = new THREE.CircleGeometry(0.3, 16);
+        // Add exaggerated headlights
+        const headlightGeometry = new THREE.CircleGeometry(0.45, 16);
         const headlightMaterial = new THREE.MeshStandardMaterial({
             color: 0xFFFFC8,
             emissive: 0xFFFFC8,
-            emissiveIntensity: 0.4
+            emissiveIntensity: 0.6
         });
         
         const headlightLeft = new THREE.Mesh(headlightGeometry, headlightMaterial);
-        headlightLeft.position.set(-bodyWidth * 0.3, 0, bodyLength * 0.49);
+        headlightLeft.position.set(-bodyWidth * 0.3, bodyHeight * 0.1, bodyLength * 0.49);
         headlightLeft.rotation.y = Math.PI;
         this.truckGroup.add(headlightLeft);
         
         const headlightRight = new THREE.Mesh(headlightGeometry, headlightMaterial);
-        headlightRight.position.set(bodyWidth * 0.3, 0, bodyLength * 0.49);
+        headlightRight.position.set(bodyWidth * 0.3, bodyHeight * 0.1, bodyLength * 0.49);
         headlightRight.rotation.y = Math.PI;
         this.truckGroup.add(headlightRight);
         
-        // Whimsical marker on top
-        const markerGeometry = new THREE.SphereGeometry(0.8, 16, 16);
-        const markerMaterial = new THREE.MeshStandardMaterial({
-            color: 0xFF5555, // Softer red
-            emissive: 0xFF5555,
-            emissiveIntensity: 0.3
-        });
-        const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-        marker.position.y = bodyHeight * 1.0 + 0.8;
-        marker.position.z = 0;
-        this.truckGroup.add(marker);
+        // Add monster truck rollbar/cage on top
+        this.addRollCage(bodyWidth, bodyHeight, bodyLength);
         
-        // Create wheels
+        // Add exhaust pipes
+        this.addExhaustPipes(bodyWidth, bodyHeight, bodyLength);
+        
+        // Add flame decals to the sides
+        this.addFlameDecals(bodyWidth, bodyHeight, bodyLength);
+        
+        // Create monster truck oversized wheels
         this.createWheels();
         
-        // Set initial position - slightly higher for Ghibli look
-        this.truckGroup.position.set(0, 2.2, 0);
+        // Set initial position - higher off the ground for monster truck look
+        this.truckGroup.position.set(0, 2.0, 0);
         
         return this.truckGroup;
     }
     
+    addRollCage(bodyWidth, bodyHeight, bodyLength) {
+        const barMaterial = new THREE.MeshStandardMaterial({
+            color: 0xFFD700, // Gold color
+            roughness: 0.5,
+            metalness: 0.7
+        });
+        
+        // Main roll cage bars (6 vertical posts)
+        const barRadius = 0.2;
+        const barHeight = 2.5;
+        
+        // Vertical bars positions (3 on each side)
+        const barPositions = [
+            [-bodyWidth * 0.35, bodyHeight * 0.5, -bodyLength * 0.2],
+            [-bodyWidth * 0.35, bodyHeight * 0.5, 0],
+            [-bodyWidth * 0.35, bodyHeight * 0.5, bodyLength * 0.2],
+            [bodyWidth * 0.35, bodyHeight * 0.5, -bodyLength * 0.2],
+            [bodyWidth * 0.35, bodyHeight * 0.5, 0],
+            [bodyWidth * 0.35, bodyHeight * 0.5, bodyLength * 0.2]
+        ];
+        
+        barPositions.forEach(position => {
+            const barGeometry = new THREE.CylinderGeometry(barRadius, barRadius, barHeight, 8);
+            const bar = new THREE.Mesh(barGeometry, barMaterial);
+            bar.position.set(...position);
+            bar.position.y += barHeight * 0.5;
+            this.truckGroup.add(bar);
+        });
+        
+        // Horizontal connecting bars (3 pairs)
+        for (let i = 0; i < 3; i++) {
+            const horizontalBarGeometry = new THREE.CylinderGeometry(barRadius, barRadius, bodyWidth * 0.7, 8);
+            const horizontalBar = new THREE.Mesh(horizontalBarGeometry, barMaterial);
+            horizontalBar.rotation.z = Math.PI / 2;
+            horizontalBar.position.set(0, bodyHeight * 0.5 + barHeight, barPositions[i][2]);
+            this.truckGroup.add(horizontalBar);
+        }
+    }
+    
+    addExhaustPipes(bodyWidth, bodyHeight, bodyLength) {
+        const exhaustMaterial = new THREE.MeshStandardMaterial({
+            color: 0xCCCCCC, // Chrome silver
+            roughness: 0.2,
+            metalness: 0.9
+        });
+        
+        // Two exhaust pipes on either side
+        const exhaustRadius = 0.25;
+        const exhaustHeight = 3.5;
+        
+        // Create two exhaust pipes
+        [-1, 1].forEach(side => {
+            const exhaustGeometry = new THREE.CylinderGeometry(exhaustRadius, exhaustRadius, exhaustHeight, 8);
+            const exhaust = new THREE.Mesh(exhaustGeometry, exhaustMaterial);
+            exhaust.position.set(side * bodyWidth * 0.4, bodyHeight * 0.6, -bodyLength * 0.3);
+            exhaust.rotation.x = Math.PI / 12; // Slight angle
+            this.truckGroup.add(exhaust);
+            
+            // Add exhaust tip
+            const exhaustTipGeometry = new THREE.CylinderGeometry(exhaustRadius * 1.3, exhaustRadius, 0.5, 8);
+            const exhaustTip = new THREE.Mesh(exhaustTipGeometry, exhaustMaterial);
+            exhaustTip.position.set(side * bodyWidth * 0.4, bodyHeight * 0.6 + exhaustHeight * 0.5 + 0.25, -bodyLength * 0.3 - exhaustHeight * 0.08);
+            exhaustTip.rotation.x = Math.PI / 12; // Match the exhaust angle
+            this.truckGroup.add(exhaustTip);
+        });
+    }
+    
+    addFlameDecals(bodyWidth, bodyHeight, bodyLength) {
+        // Create flame decal texture
+        const flameGeometry = new THREE.PlaneGeometry(bodyLength * 0.6, bodyHeight * 0.6);
+        const flameMaterial = new THREE.MeshStandardMaterial({
+            color: 0xFF4500, // Orange-red
+            emissive: 0xFF4500,
+            emissiveIntensity: 0.3,
+            transparent: true,
+            opacity: 0.9,
+            side: THREE.DoubleSide
+        });
+        
+        // Add flame to each side of truck
+        [-1, 1].forEach(side => {
+            const flame = new THREE.Mesh(flameGeometry, flameMaterial);
+            flame.position.set(side * (bodyWidth * 0.5 + 0.05), bodyHeight * 0.1, 0);
+            flame.rotation.y = side * Math.PI / 2;
+            this.truckGroup.add(flame);
+        });
+    }
+    
     createWheels() {
-        // Ghibli-style wheels - larger and more cartoonish
-        const wheelRadius = 1.3;
-        const wheelThickness = 0.85;
+        // Cartoon monster truck wheels - much larger and exaggerated
+        const wheelRadius = 2.2;
+        const wheelThickness = 1.2;
         
         // Create wheel prototype with more detail
         const wheelGeometry = new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelThickness, 20);
         const wheelMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x333333,  // Slightly lighter black
+            color: 0x111111,  // Deep black
             roughness: 0.8,
             metalness: 0.2
         });
         
+        // Treaded tire texture
+        const treadMaterial = new THREE.MeshStandardMaterial({
+            color: 0x333333, // Dark gray
+            roughness: 0.9,
+            metalness: 0.1
+        });
+        
         // Hub cap material
         const hubMaterial = new THREE.MeshStandardMaterial({
-            color: 0xCCCCCC, // Silver
+            color: 0xFFA500, // Orange
             roughness: 0.4,
             metalness: 0.8
         });
         
-        // Adjust wheel positions for the new body shape
+        // Adjust wheel positions for monster truck - higher off the ground
         const wheelPositions = [
-            [-2.1, -0.4, -2.6], // back left
-            [2.1, -0.4, -2.6],  // back right
-            [-2.1, -0.4, 2.6],  // front left
-            [2.1, -0.4, 2.6]    // front right
+            [-2.2, -0.3, -2.8], // back left
+            [2.2, -0.3, -2.8],  // back right
+            [-2.2, -0.3, 2.8],  // front left
+            [2.2, -0.3, 2.8]    // front right
         ];
         
         wheelPositions.forEach((position, index) => {
@@ -178,11 +270,19 @@ export class Truck {
             wheel.castShadow = true;
             wheelGroup.add(wheel);
             
-            // Add hub cap to each wheel
-            const hubGeometry = new THREE.CylinderGeometry(wheelRadius * 0.4, wheelRadius * 0.4, wheelThickness + 0.05, 16);
+            // Add oversized hub cap to each wheel
+            const hubGeometry = new THREE.CylinderGeometry(wheelRadius * 0.5, wheelRadius * 0.5, wheelThickness + 0.05, 16);
             const hub = new THREE.Mesh(hubGeometry, hubMaterial);
             hub.rotation.z = Math.PI / 2;
             wheelGroup.add(hub);
+            
+            // Add spokes to hub caps
+            for (let i = 0; i < 6; i++) {
+                const spokeGeometry = new THREE.BoxGeometry(wheelRadius * 0.8, 0.15, 0.15);
+                const spoke = new THREE.Mesh(spokeGeometry, hubMaterial);
+                spoke.rotation.z = (i / 6) * Math.PI * 2;
+                hub.add(spoke);
+            }
             
             wheelGroup.position.set(...position);
             this.truckGroup.add(wheelGroup);
@@ -193,6 +293,39 @@ export class Truck {
             }
             
             this.wheels.push(wheelGroup);
+        });
+        
+        // Add suspension elements
+        this.addSuspension(wheelPositions, wheelRadius);
+    }
+    
+    addSuspension(wheelPositions, wheelRadius) {
+        const suspensionMaterial = new THREE.MeshStandardMaterial({
+            color: 0x4169E1, // Royal blue
+            roughness: 0.6,
+            metalness: 0.4
+        });
+        
+        // Add shock absorbers to each wheel
+        wheelPositions.forEach((position, index) => {
+            // Create shock absorber cylinder
+            const shockGeometry = new THREE.CylinderGeometry(0.3, 0.3, 2.5, 8);
+            const shock = new THREE.Mesh(shockGeometry, suspensionMaterial);
+            
+            // Position shock slightly above wheel
+            const shockX = position[0] * 0.7;
+            const shockY = position[1] + 1.5;
+            const shockZ = position[2];
+            
+            shock.position.set(shockX, shockY, shockZ);
+            shock.rotation.z = 0.2 * Math.sign(position[0]); // Slight angle
+            this.truckGroup.add(shock);
+            
+            // Create suspension arm
+            const armGeometry = new THREE.BoxGeometry(Math.abs(position[0] - shockX), 0.3, 0.3);
+            const arm = new THREE.Mesh(armGeometry, suspensionMaterial);
+            arm.position.set((position[0] + shockX) / 2, position[1] + 0.5, position[2]);
+            this.truckGroup.add(arm);
         });
     }
     
@@ -215,13 +348,13 @@ export class Truck {
     }
     
     updateAnimations(deltaTime, steeringAngle, speed, groundNormal) {
-        // Calculate lean while turning (roll)
-        const targetLean = -steeringAngle * 0.03 * Math.min(1, speed / 5);
+        // Calculate lean while turning (roll) - exaggerated for cartoon effect
+        const targetLean = -steeringAngle * 0.05 * Math.min(1, speed / 5);
         this.animation.lean += (targetLean - this.animation.lean) * Math.min(1, deltaTime * 5);
         
-        // Calculate pitch based on acceleration/deceleration
+        // Calculate pitch based on acceleration/deceleration - exaggerated
         const acceleration = speed - this.animation.prevSpeed;
-        const targetPitch = -acceleration * 0.01;
+        const targetPitch = -acceleration * 0.015;
         this.animation.pitch += (targetPitch - this.animation.pitch) * Math.min(1, deltaTime * 3);
         this.animation.prevSpeed = speed;
     }
@@ -238,9 +371,9 @@ export class Truck {
                 wheelMesh.rotation.x = this.animation.wheelRotation;
             }
             
-            // Steer only front wheels (index 2,3)
+            // Steer only front wheels (index 2,3) - exaggerated steering for cartoon look
             if (index >= 2) {
-                wheel.rotation.y = steeringAngle;
+                wheel.rotation.y = steeringAngle * 1.2;
             }
         });
     }
@@ -255,10 +388,5 @@ export class Truck {
         this.animation.pitch = 0;
         this.animation.wheelRotation = 0;
         this.animation.prevSpeed = 0;
-        
-        // Reset wheel steering
-        this.wheels.forEach(wheel => {
-            wheel.rotation.y = 0;
-        });
     }
 } 
